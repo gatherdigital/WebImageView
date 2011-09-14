@@ -46,15 +46,17 @@ public class WebImageManagerRetriever extends AsyncTask<Void, Void, Bitmap> {
 	private Context mContext;
 	private String mURLString;
 	private int mDiskCacheTimeoutInSeconds;
+	private OnWebImageLoadListener mListener;
 	
 	static {
 		mCache = new WebImageCache();
 	}
 	
-	public WebImageManagerRetriever(Context context, String urlString, int diskCacheTimeoutInSeconds) {
+	public WebImageManagerRetriever(Context context, String urlString, int diskCacheTimeoutInSeconds, OnWebImageLoadListener listener) {
 		mContext = context;
 		mURLString = urlString;
 		mDiskCacheTimeoutInSeconds = diskCacheTimeoutInSeconds;
+		mListener = listener;
 	}
 	
 	@Override
@@ -100,7 +102,9 @@ public class WebImageManagerRetriever extends AsyncTask<Void, Void, Bitmap> {
 	@Override
     protected void onPostExecute(Bitmap bitmap) {
 		// complete!
-		WebImageManager.getInstance().reportImageLoad(mContext, mURLString, bitmap);
+	    if (null != mListener) {
+	        mListener.onWebImageLoad(mURLString, bitmap);
+	    }
     }
 
     static class FlushedInputStream extends FilterInputStream {
@@ -130,5 +134,9 @@ public class WebImageManagerRetriever extends AsyncTask<Void, Void, Bitmap> {
             
             return totalBytesSkipped;
         }
+    }
+
+    public interface OnWebImageLoadListener {
+        public void onWebImageLoad(String url, Bitmap bitmap);
     }
 }

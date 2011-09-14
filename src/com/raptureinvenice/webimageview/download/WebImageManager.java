@@ -30,9 +30,10 @@ import java.util.Set;
 import android.content.Context;
 import android.graphics.Bitmap;
 
+import com.raptureinvenice.webimageview.download.WebImageManagerRetriever.OnWebImageLoadListener;
 import com.raptureinvenice.webimageview.image.WebImageView;
 
-public class WebImageManager {
+public class WebImageManager implements OnWebImageLoadListener {
 	private static WebImageManager mInstance = null;
 	
 	// TODO: pool retrievers
@@ -60,7 +61,7 @@ public class WebImageManager {
 		WebImageManagerRetriever retriever = mRetrievers.get(urlString);
 
 		if (mRetrievers.get(urlString) == null) {
-			retriever = new WebImageManagerRetriever(context, urlString, diskCacheTimeoutInSeconds);			
+			retriever = new WebImageManagerRetriever(context, urlString, diskCacheTimeoutInSeconds, this);
 			mRetrievers.put(urlString, retriever);
 			mWaiters.add(view);
 
@@ -76,7 +77,7 @@ public class WebImageManager {
 		}
 	}
 
-	public void reportImageLoad(Context context, String urlString, Bitmap bitmap) {
+	public void reportImageLoad(String urlString, Bitmap bitmap) {
 		WebImageManagerRetriever retriever = mRetrievers.get(urlString);
 
 		for (WebImageView iWebImageView : mRetrieverWaiters.get(retriever)) {
@@ -94,4 +95,9 @@ public class WebImageManager {
 		// TODO: cancel connection in progress, too
 		mWaiters.remove(view);
 	}
+
+    @Override
+    public void onWebImageLoad(String url, Bitmap bitmap) {
+        reportImageLoad(url, bitmap);
+    }
 }
