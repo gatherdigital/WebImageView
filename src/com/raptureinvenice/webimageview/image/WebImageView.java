@@ -59,47 +59,26 @@ public class WebImageView extends ImageView {
 	}
 
 	public void setImageWithURL(Context context, String urlString, Drawable placeholderDrawable, int diskCacheTimeoutInSeconds) {
+	    final WebImageManager mgr = WebImageManager.getInstance();
+
+	    cancelCurrentLoad();
 		setImageDrawable(placeholderDrawable);
 		
-		// get image
-		setImageWithURL(context, urlString, diskCacheTimeoutInSeconds);
+        if (urlString != null) {
+            mgr.downloadURL(context, urlString, WebImageView.this, diskCacheTimeoutInSeconds);
+        }
 	}
 
 	public void setImageWithURL(Context context, String urlString, Drawable placeholderDrawable) {
-		setImageDrawable(placeholderDrawable);
-		
-		// get image
-		setImageWithURL(context, urlString, -1);
+		setImageWithURL(context, urlString, placeholderDrawable, -1);
 	}
 
 	public void setImageWithURL(final Context context, final String urlString, int diskCacheTimeoutInSeconds) {
-	    final WebImageManager mgr = WebImageManager.getInstance();
-
-	    // cancel any existing request
-	    cancelCurrentLoad();
-	    
-	    // clear
-    	setImageDrawable(null);
-
-    	// load the image any way we can
-	    if (urlString != null) {
-	    	mgr.downloadURL(context, urlString, WebImageView.this, diskCacheTimeoutInSeconds);
-	    }
+	    setImageWithURL(context, urlString, null, diskCacheTimeoutInSeconds);
 	}
 
 	public void setImageWithURL(final Context context, final String urlString) {
-	    final WebImageManager mgr = WebImageManager.getInstance();
-
-	    // cancel any existing request
-	    cancelCurrentLoad();
-	    
-	    // clear
-    	setImageDrawable(null);
-
-    	// load the image any way we can
-	    if (urlString != null) {
-	    	mgr.downloadURL(context, urlString, WebImageView.this, -1);
-	    }
+	    setImageWithURL(context, urlString, null, -1);
 	}
 
 	public void cancelCurrentLoad() {

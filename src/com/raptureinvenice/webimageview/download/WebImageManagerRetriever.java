@@ -103,7 +103,11 @@ public class WebImageManagerRetriever extends AsyncTask<Void, Void, Bitmap> {
     protected void onPostExecute(Bitmap bitmap) {
 		// complete!
 	    if (null != mListener) {
-	        mListener.onWebImageLoad(mURLString, bitmap);
+	        if (null == bitmap) {
+	            mListener.onWebImageError();
+	        } else {
+	            mListener.onWebImageLoad(mURLString, bitmap);
+	        }
 	    }
     }
 
@@ -138,5 +142,6 @@ public class WebImageManagerRetriever extends AsyncTask<Void, Void, Bitmap> {
 
     public interface OnWebImageLoadListener {
         public void onWebImageLoad(String url, Bitmap bitmap);
+        public void onWebImageError();
     }
 }

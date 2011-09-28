@@ -77,19 +77,19 @@ public class WebImageManager implements OnWebImageLoadListener {
 		}
 	}
 
-	public void reportImageLoad(String urlString, Bitmap bitmap) {
-		WebImageManagerRetriever retriever = mRetrievers.get(urlString);
+    public void reportImageLoad(String urlString, Bitmap bitmap) {
+        WebImageManagerRetriever retriever = mRetrievers.get(urlString);
 
-		for (WebImageView iWebImageView : mRetrieverWaiters.get(retriever)) {
-			if (mWaiters.contains(iWebImageView)) {
-				iWebImageView.setImageBitmap(bitmap);
-				mWaiters.remove(iWebImageView);
-			}
-		}
-		
-		mRetrievers.remove(urlString);
-		mRetrieverWaiters.remove(retriever);
-	}
+        for (WebImageView iWebImageView : mRetrieverWaiters.get(retriever)) {
+            if (mWaiters.contains(iWebImageView)) {
+                iWebImageView.setImageBitmap(bitmap);
+                mWaiters.remove(iWebImageView);
+            }
+        }
+
+        mRetrievers.remove(urlString);
+        mRetrieverWaiters.remove(retriever);
+    }
 
 	public void cancelForWebImageView(WebImageView view) {
 		// TODO: cancel connection in progress, too
@@ -99,5 +99,9 @@ public class WebImageManager implements OnWebImageLoadListener {
     @Override
     public void onWebImageLoad(String url, Bitmap bitmap) {
         reportImageLoad(url, bitmap);
+    }
+
+    @Override
+    public void onWebImageError() {
     }
 }
