@@ -67,7 +67,8 @@ public class WebImageManagerRetriever extends AsyncTask<Void, Void, Bitmap> {
 		// check disk cache first
 		if (bitmap == null) {
 			bitmap = mCache.getBitmapFromDiskCache(mContext, mURLString, mDiskCacheTimeoutInSeconds);
-			mCache.addBitmapToMemCache(mURLString, bitmap);
+			if (bitmap != null)
+				mCache.addBitmapToMemCache(mURLString, bitmap);
 		}
 		
 		if (bitmap == null) {

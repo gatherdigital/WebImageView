@@ -27,30 +27,35 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.ref.SoftReference;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.support.v4.util.LruCache;
 import android.util.Log;
 
 public class WebImageCache {
 	private final static String TAG = WebImageCache.class.getSimpleName();
 
+
 	// cache rules
 	private static boolean mIsMemoryCachingEnabled = true;
 	private static boolean mIsDiskCachingEnabled = true;
 	private static int mDefaultDiskCacheTimeoutInSeconds = 60 * 60 * 24; // one day default 
+	private static int cacheSize = 4 * 1024 * 1024; // 4MiB;
 		
-	private Map<String, SoftReference<Bitmap>> mMemCache;
+	private LruCache<String, Bitmap> mMemCache;
 	
 	public WebImageCache() {
-		mMemCache = new HashMap<String, SoftReference<Bitmap>>();
+		mMemCache = new LruCache<String, Bitmap>(cacheSize) {
+			@Override
+			protected int sizeOf(String key, Bitmap bitmap) {
+				return bitmap.getRowBytes() * bitmap.getHeight();
+			}
+		};
 	}
 
 	public static void setMemoryCachingEnabled(boolean enabled) {
@@ -68,22 +73,23 @@ public class WebImageCache {
 		Log.v(TAG, "Disk cache timeout set to " + seconds + " seconds.");
 	}
 	
+	public static void setCacheSize(int size) {
+		cacheSize = size;
+	}
+	
 	public Bitmap getBitmapFromMemCache(String urlString) {
 		if (mIsMemoryCachingEnabled) {
 			synchronized (mMemCache) {
-				SoftReference<Bitmap> bitmapRef = mMemCache.get(urlString);
-				
-				if (bitmapRef != null) {
-					Bitmap bitmap = bitmapRef.get();
-					
-					if (bitmap == null) {
-						mMemCache.remove(urlString);
-				        Log.v(TAG, "Expiring memory cache for URL " + urlString + ".");
-					} else {
-				        Log.v(TAG, "Retrieved " + urlString + " from memory cache.");
-						return bitmap; 
-					}
-				}				
+				Bitmap bitmap = mMemCache.get(urlString);
+
+				if (bitmap == null) {
+					mMemCache.remove(urlString);
+					Log.v(TAG, "Expiring memory cache for URL " + urlString
+							+ ".");
+				} else {
+					Log.v(TAG, "Retrieved " + urlString + " from memory cache.");
+					return bitmap;
+				}
 			}
 		}
 		
@@ -137,7 +143,7 @@ public class WebImageCache {
 	public void addBitmapToMemCache(String urlString, Bitmap bitmap) {
 		if (mIsMemoryCachingEnabled) {
 			synchronized (mMemCache) {
-				mMemCache.put(urlString, new SoftReference<Bitmap>(bitmap));
+				mMemCache.put(urlString, bitmap);
 			}
 		}
 	}
