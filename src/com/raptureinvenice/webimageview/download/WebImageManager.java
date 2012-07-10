@@ -23,9 +23,8 @@
 package com.raptureinvenice.webimageview.download;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
+import java.util.Map.Entry;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -40,8 +39,7 @@ public class WebImageManager implements OnWebImageLoadListener {
 	
 	// views waiting for an image to load in
 	private Map<String, WebImageManagerRetriever> mRetrievers;
-	private Map<WebImageManagerRetriever, Set<WebImageView>> mRetrieverWaiters;
-	private Set<WebImageView> mWaiters;
+	private Map<WebImageView, String> viewsAwaitingImage;
 	
 	public static WebImageManager getInstance() {
 		if (mInstance == null) {
@@ -53,47 +51,35 @@ public class WebImageManager implements OnWebImageLoadListener {
 	
 	private WebImageManager() {
 		mRetrievers = new HashMap<String, WebImageManagerRetriever>();
-		mRetrieverWaiters = new HashMap<WebImageManagerRetriever, Set<WebImageView>>();
-		mWaiters = new HashSet<WebImageView>();
+		viewsAwaitingImage = new HashMap<WebImageView, String>();
 	}
 
 	public void downloadURL(Context context, String urlString, final WebImageView view, int diskCacheTimeoutInSeconds) {
 		WebImageManagerRetriever retriever = mRetrievers.get(urlString);
 
+		viewsAwaitingImage.put(view, urlString);
+
 		if (mRetrievers.get(urlString) == null) {
 			retriever = new WebImageManagerRetriever(context, urlString, diskCacheTimeoutInSeconds, this);
 			mRetrievers.put(urlString, retriever);
-			mWaiters.add(view);
-
-			Set<WebImageView> views = new HashSet<WebImageView>();
-			views.add(view);
-			mRetrieverWaiters.put(retriever, views);
-			
-			// start!
 			retriever.execute();
-		} else {
-			mRetrieverWaiters.get(retriever).add(view);
-			mWaiters.add(view);
 		}
 	}
 
     public void reportImageLoad(String urlString, Bitmap bitmap) {
-        WebImageManagerRetriever retriever = mRetrievers.get(urlString);
-
-        for (WebImageView iWebImageView : mRetrieverWaiters.get(retriever)) {
-            if (mWaiters.contains(iWebImageView)) {
-                iWebImageView.setImageBitmap(bitmap);
-                mWaiters.remove(iWebImageView);
-            }
-        }
+    	Map<WebImageView, String> waiters = new HashMap<WebImageView, String>(viewsAwaitingImage);
+    	for (Entry<WebImageView, String> entry : waiters.entrySet()) {
+    		if (entry.getValue().equals(urlString)) {
+    			entry.getKey().setImageBitmap(bitmap);
+    			viewsAwaitingImage.remove(entry.getKey());
+    		}
+		}
 
         mRetrievers.remove(urlString);
-        mRetrieverWaiters.remove(retriever);
     }
 
 	public void cancelForWebImageView(WebImageView view) {
-		// TODO: cancel connection in progress, too
-		mWaiters.remove(view);
+		viewsAwaitingImage.remove(view);
 	}
 
     @Override
